@@ -3,7 +3,7 @@
   <img alt="Version" src="https://img.shields.io/badge/version-0.0.1-blue.svg?cacheSeconds=2592000" />
 </p>
 
-> Recycle Classification is a React and Express App that uses Tenserflow.js. It uses a custom trained model to classify Recycle. Check out the [model](https://github.com/iberatkaya/recycletrain).
+> Recycle Classification is a React that uses Tenserflow.js. It uses a custom trained model to classify Recycle. Check out the [model](https://github.com/iberatkaya/recycletrain).
 
 ### 🏠 [Homepage](https://iberatkaya.githib.io/garbageclassification)
 

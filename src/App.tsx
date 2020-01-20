@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
-import tf from '@tensorflow/tfjs';
+import * as tf from '@tensorflow/tfjs';
 import './App.css';
 
 
@@ -59,7 +59,6 @@ class App extends Component<Props, State> {
     this.setState({ loading: true, image: imagedata }, async () => {
       const model = await tf.loadLayersModel('https://raw.githubusercontent.com/iberatkaya/recyclemodel/master/model.json');
       //@ts-ignore
-      console.log(this.refs.image);
       //@ts-ignore
       const tensor = [tf.browser.fromPixels(this.refs.image)];
       const stack = tf.stack(tensor);
@@ -67,7 +66,6 @@ class App extends Component<Props, State> {
       const predtesnor = model.predict(stack);
       //@ts-ignore
       const data = await predtesnor.data();
-      console.log(data);
       const pred = { Cardboard: data[0], Glass: data[1], Metal: data[2], Paper: data[3], Plastic: data[4], Trash: data[5] } as RecycleTypes
       this.setState({ loading: false, pred: pred })
     })
