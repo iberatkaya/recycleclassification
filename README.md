@@ -5,7 +5,7 @@
 
 > Recycle Classification is a React that uses Tenserflow.js. It uses a custom trained model to classify Recycle. Check out the [model](https://github.com/iberatkaya/recycletrain).
 
-### 🏠 [Homepage](https://iberatkaya.githib.io/garbageclassification)
+### 🏠 [Homepage](https://iberatkaya.githib.io/recycleclassification)
 
 
 ## Install
