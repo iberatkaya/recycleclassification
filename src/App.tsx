@@ -19,6 +19,7 @@ interface State {
   image: string,
   scanned: boolean,
   loading: boolean,
+  model: tf.LayersModel | null,
   pred: RecycleTypes | null
 }
 
@@ -38,6 +39,7 @@ class App extends Component<Props, State> {
     this.state = {
       image: '',
       scanned: false,
+      model: null,
       loading: false,
       pred: null
     }
@@ -57,17 +59,29 @@ class App extends Component<Props, State> {
     const file = e.target.files![0]
     const imagedata = await this.getBase64(file) as string;
     this.setState({ loading: true, image: imagedata }, async () => {
-      const model = await tf.loadLayersModel('https://raw.githubusercontent.com/iberatkaya/recyclemodel/master/model.json');
+      let { model } = this.state;
+      if(model === null)
+        model = await tf.loadLayersModel('https://raw.githubusercontent.com/iberatkaya/recyclemodel/master/model.json');
+        //@ts-ignore
+      const tensor = tf.browser.fromPixels(this.refs.image, 1);
+      let tensorarr = await tensor.array();
+      let temp = [];
+      for (let i = 0; i < tensorarr.length; i++) {
+        let temparr = []
+        for (let j = 0; j < tensorarr[i].length; j++) {
+          let normtemp = (tensorarr[i][j][0] as number) / 255;
+          temparr.push([normtemp]);
+        }
+        temp.push(temparr);
+      }
+      const normalized = tf.tensor3d(temp, [120, 120, 1], "float32")
+      const stack = tf.stack([normalized]);
+      tensor.dispose();
+      const predtensor = model.predict(stack);
       //@ts-ignore
-      //@ts-ignore
-      const tensor = [tf.browser.fromPixels(this.refs.image)];
-      const stack = tf.stack(tensor);
-      tensor[0].dispose();
-      const predtesnor = model.predict(stack);
-      //@ts-ignore
-      const data = await predtesnor.data();
+      const data = await predtensor.data();
       const pred = { Cardboard: data[0], Glass: data[1], Metal: data[2], Paper: data[3], Plastic: data[4], Trash: data[5] } as RecycleTypes
-      this.setState({ loading: false, pred: pred })
+      this.setState({ loading: false, pred: pred, model })
     })
   }
 
@@ -140,7 +154,7 @@ class App extends Component<Props, State> {
             :
             <div className="container text-center">
               <div className="text-center">
-                <img alt="input" ref="image" style={{ width: 100, height: 100, marginBottom: '2rem' }} className="img-responsive" src={this.state.image}></img>
+                <img alt="input" ref="image" style={{ width: 120, height: 120, marginBottom: '2rem' }} className="img-responsive" src={this.state.image}></img>
               </div>
               <div className="spinner-border text-danger mb-3" role="status"></div>
               <div className="lead">Scanning...</div>
