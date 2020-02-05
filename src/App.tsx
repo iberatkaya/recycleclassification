@@ -3,6 +3,7 @@ import Navbar from 'react-bootstrap/Navbar';
 import Nav from 'react-bootstrap/Nav';
 import * as tf from '@tensorflow/tfjs';
 import './App.css';
+import { Tensor } from '@tensorflow/tfjs';
 
 
 /**
@@ -58,31 +59,7 @@ class App extends Component<Props, State> {
     e.persist();
     const file = e.target.files![0]
     const imagedata = await this.getBase64(file) as string;
-    this.setState({ loading: true, image: imagedata }, async () => {
-      let { model } = this.state;
-      if(model === null)
-        model = await tf.loadLayersModel('https://raw.githubusercontent.com/iberatkaya/recyclemodel/master/model.json');
-        //@ts-ignore
-      const tensor = tf.browser.fromPixels(this.refs.image, 1);
-      let tensorarr = await tensor.array();
-      let temp = [];
-      for (let i = 0; i < tensorarr.length; i++) {
-        let temparr = []
-        for (let j = 0; j < tensorarr[i].length; j++) {
-          let normtemp = (tensorarr[i][j][0] as number) / 255;
-          temparr.push([normtemp]);
-        }
-        temp.push(temparr);
-      }
-      const normalized = tf.tensor3d(temp, [120, 120, 1], "float32")
-      const stack = tf.stack([normalized]);
-      tensor.dispose();
-      const predtensor = model.predict(stack);
-      //@ts-ignore
-      const data = await predtensor.data();
-      const pred = { Cardboard: data[0], Glass: data[1], Metal: data[2], Paper: data[3], Plastic: data[4], Trash: data[5] } as RecycleTypes
-      this.setState({ loading: false, pred: pred, model })
-    })
+    this.setState({ loading: true, image: imagedata })
   }
 
   render() {
@@ -154,7 +131,31 @@ class App extends Component<Props, State> {
             :
             <div className="container text-center">
               <div className="text-center">
-                <img alt="input" ref="image" style={{ width: 120, height: 120, marginBottom: '2rem' }} className="img-responsive" src={this.state.image}></img>
+                <img alt="input" ref="image" style={{ width: '40rem', height: '40rem', marginBottom: '2rem', display: 'none' }}
+                  onLoad={async () => {
+                    let { model } = this.state;
+                    if (model === null)
+                      model = await tf.loadLayersModel('https://raw.githubusercontent.com/iberatkaya/recyclemodel/master/model.json');
+                    //@ts-ignore
+                    const tensor = tf.browser.fromPixels(this.refs.image, 1);
+                    let resized = tf.cast(tf.image.resizeBilinear(tensor, [120, 120]), 'float32');
+                    const inputMax = tf.max(resized);
+                    const inputMin = tf.min(resized);
+                    const normalized = resized.sub(inputMin).div(inputMax.sub(inputMin));
+                    const stack = tf.stack([normalized]);
+                    const predtensor = model.predict(stack);
+                    //@ts-ignore
+                    const data = await predtensor.data();
+                    const pred = { Cardboard: data[0], Glass: data[1], Metal: data[2], Paper: data[3], Plastic: data[4], Trash: data[5] } as RecycleTypes
+                    tensor.dispose();
+                    inputMax.dispose();
+                    inputMin.dispose();
+                    resized.dispose();
+                    (predtensor as tf.Tensor3D).dispose();
+                    stack.dispose();
+                    this.setState({ loading: false, pred: pred, model })
+                  }}
+                  className="img-responsive" src={this.state.image}></img>
               </div>
               <div className="spinner-border text-danger mb-3" role="status"></div>
               <div className="lead">Scanning...</div>
